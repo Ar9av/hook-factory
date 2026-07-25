@@ -5,8 +5,8 @@ import { cmdList } from './commands/list.js'
 import { cmdDoctor } from './commands/doctor.js'
 import { cmdRun } from './commands/run.js'
 import { cmdAdd, cmdRemovePlugin } from './commands/add.js'
+import { cmdAgent } from './commands/agent.js'
 import { cmdTest } from './commands/test.js'
-import { cmdUi } from './commands/ui.js'
 import { c } from './core/ui.js'
 
 const HELP = `${c.bold('hook-factory')} — one hook config, every coding agent
@@ -15,12 +15,18 @@ ${c.bold('Usage')}
   hook-factory <command> [options]        ${c.dim('(aliased as `hf`)')}
 
 ${c.bold('Getting started')}
-  init [agents...]      Create hooks.config.ts, detecting agents you already use
-  ui                    Interactive TUI: pick agents, toggle plugins, preview the diff
+  init [agents...]      Create hooks.config, detecting agents you already use
   sync                  Compile your hooks into every agent's native config
   doctor                Check what's installed, wired up, and actually blocking
 
-${c.bold('Editing')}
+${c.bold('Agents')}
+  agent list            Every supported agent, and which ones you've enabled
+  agent add <id...>     Enable an agent  ${c.dim('(--detected for everything on this machine)')}
+  agent remove <id...>  Disable an agent
+  agent detect          Scan this machine for agents you already have
+  agent info <id>       Events, blocking capability, config paths, caveats
+
+${c.bold('Hooks')}
   add <plugin>          Add a built-in plugin to your config
   remove <plugin>       Take one back out
   list                  Show hooks, plugins, agents, and the capability matrix
@@ -32,17 +38,17 @@ ${c.bold('Runtime')}
   unsync                Remove every hook-factory block from agent configs
 
 ${c.bold('Options')}
-  --config <path>       Use a specific hooks.config.ts
+  --config <path>       Use a specific hooks.config file
   --scope project|user  Write repo-local or home-dir config (default: project)
   --agent <id>          Limit to one agent
   --dry-run             Show what would change, write nothing
-  --json                Machine-readable output (this is what the TUI speaks)
-  --yes                 Skip confirmations
+  --json                Machine-readable output
   -h, --help            This
   -v, --version         Print version
 
 ${c.bold('Examples')}
   ${c.dim('$')} npx hook-factory init
+  ${c.dim('$')} npx hook-factory agent add cursor gemini-cli
   ${c.dim('$')} npx hook-factory add secret-guard
   ${c.dim('$')} npx hook-factory sync --dry-run
   ${c.dim('$')} npx hook-factory test preToolUse --tool Bash --command "rm -rf /"
@@ -100,6 +106,9 @@ async function main() {
       return cmdSync(args, 'sync')
     case 'unsync':
       return cmdSync(args, 'remove')
+    case 'agent':
+    case 'agents':
+      return cmdAgent(args)
     case 'list':
     case 'ls':
       return cmdList(args)
@@ -115,9 +124,6 @@ async function main() {
       return cmdRemovePlugin(args)
     case 'test':
       return cmdTest(args)
-    case 'ui':
-    case 'tui':
-      return cmdUi(args)
     default:
       process.stderr.write(`${c.red('unknown command')} \`${cmd}\`\n\n${HELP}`)
       process.exitCode = 1

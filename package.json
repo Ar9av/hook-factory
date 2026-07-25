@@ -56,8 +56,8 @@
     "build": "tsc -p tsconfig.json && node scripts/chmod-bin.mjs",
     "watch": "tsc -p tsconfig.json --watch",
     "test": "npm run build && node --test test/*.test.js",
-    "tui": "cd tui && go build -o ../bin/hook-factory-tui .",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "prepare": "npm run build"
   },
   "dependencies": {},
   "devDependencies": {

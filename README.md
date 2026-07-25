@@ -48,33 +48,125 @@ $ npx hook-factory sync
 
 That one `match.shell()` now covers `Bash`, `terminal`, `run_shell_command`, `execute_bash`, `launch-process`, and `shell` — because normalizing that table is hook-factory's job, not yours.
 
+---
+
 ## Install
 
-```bash
-npm i -D hook-factory     # recommended: hooks then run without npx overhead
-npx hook-factory init     # detects which agents you already use
-npx hook-factory sync
-```
+Requires **Node ≥ 20.11**. Zero runtime dependencies.
 
-Node ≥ 20.11. Zero runtime dependencies.
-
-## The interactive UI
+### Per project (recommended)
 
 ```bash
-npx hook-factory ui
+npm install --save-dev hook-factory
 ```
 
-A [Bubble Tea](https://github.com/charmbracelet/bubbletea) TUI for the parts that benefit from being visual:
+<details>
+<summary>pnpm · yarn · bun</summary>
 
-| Tab | What it's for |
-|---|---|
-| **Agents** | Capability matrix across all 26. `■` can block, `●` fires but can't block, `·` no such event |
-| **Plugins** | Toggle guardrails on and off; it edits your config file |
-| **Sync** | Live diff of every file `sync` would touch, before it touches it |
-| **Doctor** | Is this *actually* wired up right now? |
-| **Playground** | Fire a synthetic event through your real hooks and watch each agent's verdict |
+```bash
+pnpm add -D hook-factory
+yarn add -D hook-factory
+bun add -d hook-factory
+```
+</details>
 
-Build it from a checkout with `npm run tui` (needs Go), or set `HOOK_FACTORY_TUI` to a prebuilt binary. Everything the TUI does has a flag-driven equivalent — it's a client of the same `--json` API, so the two can't drift.
+A local install is worth it: the hooks in your agent configs then point at `node_modules/.bin/hook-factory` directly, instead of resolving through `npx` on **every single tool call**. `doctor` warns you if you're on the slow path.
+
+### Globally
+
+```bash
+npm install -g hook-factory
+```
+
+Gives you `hook-factory` and the shorter `hf` on your PATH.
+
+### Without installing
+
+```bash
+npx hook-factory@latest init
+```
+
+Fine for trying it out. Install it properly before relying on it in a real project.
+
+### From source
+
+```bash
+git clone https://github.com/Ar9av/hook-factory
+cd hook-factory
+npm install        # builds automatically via the prepare script
+npm test
+node dist/cli.js --help
+```
+
+Or install the git version straight into a project — it builds on install:
+
+```bash
+npm install --save-dev github:Ar9av/hook-factory
+```
+
+### Then
+
+```bash
+npx hook-factory init      # writes hooks.config, detecting agents you already use
+npx hook-factory sync      # compiles into every enabled agent's native config
+npx hook-factory doctor    # confirms it's actually wired up
+```
+
+`init` writes `hooks.config.ts` in an ESM project and `hooks.config.mts` in a CommonJS one, because Node loads a bare `.ts` file as CommonJS there and every `import` line would throw.
+
+---
+
+## Managing agents
+
+```console
+$ hook-factory agent list
+
+Agents — 5 enabled of 26
+
+[✓]  claude-code       Claude Code        full     installed  ●  ■  ■  ●  ·  ■
+[✓]  codex             Codex CLI          full     installed  ●  ■  ■  ●  ·  ■
+[✓]  cursor            Cursor             full     installed  ●  ■  ■  ●  ■  ●
+[ ]  qwen-code         Qwen Code          full     —          ●  ■  ■  ■  ·  ■
+[ ]  aider             Aider              none     —          ·  ·  ·  ·  ·  ·
+
+  ■ can block   ● fires, cannot block   · unsupported
+```
+
+```bash
+hook-factory agent add cursor gemini-cli   # enable agents
+hook-factory agent add --detected          # enable everything found on this machine
+hook-factory agent remove aider
+hook-factory agent detect                  # what's installed here?
+hook-factory agent info codex              # events, config paths, known caveats
+```
+
+`agent add`/`remove` edit the `agents: []` array in your config in place — comments and formatting survive. `agent info` is the one to reach for before trusting a rule on an unfamiliar agent:
+
+```console
+$ hook-factory agent info codex
+
+Codex CLI (codex)  full
+https://developers.openai.com/codex/hooks
+
+sync writes its config directly
+
+Config
+  project  .codex/hooks.json (json)
+  user     ~/.codex/hooks.json (json)
+
+Events — 10 mapped, 5 can block
+  ■  preToolUse   →  PreToolUse    can block
+  ●  postToolUse  →  PostToolUse   observe only
+  …
+
+Worth knowing
+  · Codex requires you to trust a hook before it first runs — use `/hooks` in the
+    CLI, or `--dangerously-bypass-hook-trust` for automation.
+  · Blocking is reliable via exit 2 + stderr; the stdout `permissionDecision: deny`
+    path did not block in a live v0.145.0 test.
+```
+
+---
 
 ## How it works
 
@@ -92,6 +184,8 @@ Build it from a checkout with `npm run tui` (needs Go), or set `HOOK_FACTORY_TUI
 Your handlers never see an agent-specific payload and never emit an agent-specific decision. Adapters own both translations.
 
 **Sync is safe to re-run.** Everything hook-factory writes is tagged `_hookFactory: true`, so it merges into config you already have, replaces rather than duplicates on re-sync, and `unsync` removes exactly its own entries and nothing else.
+
+---
 
 ## Writing hooks
 
@@ -138,6 +232,8 @@ onPreToolUse(match.shell(), async (ev, ctx) => {
 })
 ```
 
+---
+
 ## Built-in plugins
 
 ```bash
@@ -159,6 +255,8 @@ npx hook-factory add secret-guard
 
 A plugin is a `definePlugin({ name, hooks })` call using exactly the public API — nothing is privileged. Publish one to npm and people import it like any other module.
 
+---
+
 ## Supported agents
 
 **Auto-installed** — `sync` writes the config directly:
@@ -173,11 +271,9 @@ A plugin is a `definePlugin({ name, hooks })` call using exactly the public API 
 
 `aider` (lint/test gates) · `warp` (agent profiles + command allowlist) · `trae` / `trae-cn` (MCP-based validation)
 
-`npx hook-factory list --agents` prints the full capability matrix.
-
 ### Caveats hook-factory knows about
 
-Adapters carry the sharp edges as notes, surfaced by `sync` and `doctor`:
+Adapters carry the sharp edges as notes, surfaced by `agent info`, `sync`, and `doctor`:
 
 - **Codex** requires trusting a hook before first run (`/hooks`, or `--dangerously-bypass-hook-trust`). Its documented stdout `permissionDecision: deny` path did not block in a live v0.145.0 test — hook-factory uses exit 2, which does.
 - **Continue CLI** hooks did not fire at all in headless (`-p`) mode in a live v1.5.47 test, for any event or config location. Don't rely on them in CI.
@@ -187,17 +283,25 @@ Adapters carry the sharp edges as notes, surfaced by `sync` and `doctor`:
 - **OpenClaw** internal hooks can't block, so `deny()` degrades to a warning there.
 - **Aider** passes `--no-verify` on auto-commits, so your git pre-commit hooks are skipped by default.
 
+---
+
 ## Commands
 
 ```
-init [agents...]   Create hooks.config.ts, detecting agents you already use
-ui                 Interactive TUI
-sync [--dry-run]   Compile hooks into every agent's native config
-unsync             Remove every hook-factory block
-add / remove       Toggle a built-in plugin in your config
-list               Agents, plugins, events, capability matrix
-doctor             What's installed, wired up, and actually blocking
-test <event>       Fire a synthetic event through your hooks, changing nothing
+init [agents...]      Create hooks.config, detecting agents you already use
+sync [--dry-run]      Compile hooks into every agent's native config
+unsync                Remove every hook-factory block
+
+agent list            Every supported agent, and which ones you've enabled
+agent add <id...>     Enable an agent  (--detected for all found locally)
+agent remove <id...>  Disable an agent
+agent detect          Scan this machine for agents you already have
+agent info <id>       Events, blocking capability, config paths, caveats
+
+add / remove          Toggle a built-in plugin in your config
+list                  Hooks, plugins, agents, capability matrix
+doctor                What's installed, wired up, and actually blocking
+test <event>          Fire a synthetic event through your hooks, changing nothing
 ```
 
 `test` is the fastest way to know a rule works before trusting it:
@@ -211,7 +315,9 @@ $ npx hook-factory test preToolUse --tool Bash --command "sudo rm -rf /"
   ■ goose          DENY — refusing `sudo rm -rf /` — recursive force delete
 ```
 
-Add `--json` to any command; that's the interface the TUI uses.
+Add `--json` to any command for machine-readable output.
+
+---
 
 ## Adding an agent
 
@@ -233,6 +339,8 @@ export default defineHooks({ adapters: [myAgent], agents: ['my-agent'], hooks: [
 
 For a genuinely different shape, implement `render` / `parse` / `emit` directly — see `src/adapters/distinct.ts`.
 
+---
+
 ## Design notes
 
 **Fail open.** A hook that throws or times out logs to stderr and lets the tool call proceed. A broken guardrail shouldn't be able to wedge someone's coding session.
@@ -242,6 +350,8 @@ For a genuinely different shape, implement `render` / `parse` / `emit` directly 
 **Matchers push down where possible.** Tool-name filters go into the native config, so agents skip spawning the dispatcher for calls no hook cares about.
 
 **Severity, not order.** A `deny` from the third hook isn't overwritten by an `allow` from the fourth; `context` injections accumulate.
+
+---
 
 ## Provenance
 

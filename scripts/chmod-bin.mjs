@@ -1,2 +1,4 @@
 import { chmod } from 'node:fs/promises'
-await chmod(new URL('../dist/cli.js', import.meta.url), 0o755)
+import { existsSync } from 'node:fs'
+const cli = new URL('../dist/cli.js', import.meta.url)
+if (existsSync(cli)) await chmod(cli, 0o755)
