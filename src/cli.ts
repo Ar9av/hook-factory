@@ -7,6 +7,7 @@ import { cmdRun } from './commands/run.js'
 import { cmdAdd, cmdRemovePlugin } from './commands/add.js'
 import { cmdAgent } from './commands/agent.js'
 import { cmdTest } from './commands/test.js'
+import { cmdWatch } from './commands/watch.js'
 import { c } from './core/ui.js'
 
 const HELP = `${c.bold('hook-factory')} — one hook config, every coding agent
@@ -31,6 +32,7 @@ ${c.bold('Hooks')}
   remove <plugin>       Take one back out
   list                  Show hooks, plugins, agents, and the capability matrix
   test <event>          Fire a synthetic event through your hooks, changing nothing
+  watch                 Live monitor: see every hook fire, and what it decided
 
 ${c.bold('Runtime')}
   run --agent <id> --event <name>
@@ -52,6 +54,7 @@ ${c.bold('Examples')}
   ${c.dim('$')} npx hook-factory add secret-guard
   ${c.dim('$')} npx hook-factory sync --dry-run
   ${c.dim('$')} npx hook-factory test preToolUse --tool Bash --command "rm -rf /"
+  ${c.dim('$')} npx hook-factory watch                 ${c.gray('# in a second terminal')}
 `
 
 export interface Args {
@@ -124,6 +127,9 @@ async function main() {
       return cmdRemovePlugin(args)
     case 'test':
       return cmdTest(args)
+    case 'watch':
+    case 'w':
+      return cmdWatch(args)
     default:
       process.stderr.write(`${c.red('unknown command')} \`${cmd}\`\n\n${HELP}`)
       process.exitCode = 1

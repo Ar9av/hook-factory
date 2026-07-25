@@ -2,6 +2,7 @@ import type { Args } from '../cli.js'
 import { loadConfig } from '../core/config.js'
 import { buildRegistry, resolveAgentId } from '../adapters/index.js'
 import { dispatch, readStdin } from '../core/runtime.js'
+import { toEntry, write as journalWrite } from '../core/journal.js'
 
 /**
  * The dispatcher every agent invokes. Correctness bar here is different from the
@@ -30,7 +31,18 @@ export async function cmdRun(args: Args): Promise<void> {
       return
     }
 
+    const started = Date.now()
     const result = await dispatch({ config, adapter, nativeEvent, raw })
+    const elapsed = Date.now() - started
+
+    // Journal before emitting, so `hf watch` sees a call even if the agent
+    // kills us the moment we write the decision to stdout.
+    if (!args.flags['no-journal']) {
+      const candidates = config.hooks.filter(
+        (h) => h.enabled !== false && h.event === result.event.event && (!h.agents || h.agents.includes(agentId)),
+      ).length
+      journalWrite(config.projectDir, toEntry(result.event, result, elapsed, candidates))
+    }
 
     if (args.flags.debug) {
       process.stderr.write(

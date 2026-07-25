@@ -52,6 +52,38 @@ export function visibleLength(s: string): number {
   return s.replace(/\x1b\[[0-9;]*m/g, '').length
 }
 
+/**
+ * Truncate to `n` visible columns without cutting through an escape sequence.
+ * A naive slice can land mid-`\x1b[32m`, and the surviving fragment doesn't
+ * just render as garbage — the terminal keeps consuming bytes looking for the
+ * sequence terminator and swallows whatever came next.
+ */
+export function truncate(s: string, n: number, ellipsis = '…'): string {
+  if (n <= 0) return ''
+  if (visibleLength(s) <= n) return s
+  const limit = Math.max(0, n - ellipsis.length)
+  let out = ''
+  let visible = 0
+  let i = 0
+  let open = false
+  while (i < s.length && visible < limit) {
+    if (s[i] === '\x1b') {
+      const end = s.indexOf('m', i)
+      if (end === -1) break
+      const code = s.slice(i, end + 1)
+      out += code
+      open = code !== '\x1b[0m' && !/\x1b\[(?:22|23|39|49)m/.test(code)
+      i = end + 1
+      continue
+    }
+    out += s[i]
+    visible++
+    i++
+  }
+  // Close any style we truncated inside of, so it can't bleed into the next line.
+  return out + ellipsis + (open ? '\x1b[0m' : '')
+}
+
 export function colorDiff(d: string): string {
   return d
     .split('\n')

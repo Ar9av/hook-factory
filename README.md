@@ -168,6 +168,64 @@ Worth knowing
 
 ---
 
+## Watching hooks work
+
+Hooks are normally invisible. They run in a subprocess your agent spawns, so when a rule misbehaves there's nothing to look at — you can't tell a matcher that never fired from a handler that passed from one that threw.
+
+```bash
+npx hook-factory watch
+```
+
+Leave it in a second terminal while you work. Every tool call your agents make shows up live, across all of them at once:
+
+```console
+ hook-factory watch · live  ~/code/my-app
+  7 calls   5 blocked   0 acted   2 passed   claude-code cursor codex gemini-cli
+  last 60s ▁▂▅█▃▂▁·········································  7 shown
+──────────────────────────────────────────────────────────────────────────
+
+· 09:14:22 claude-code    Bash             npm test  4ms
+■ 09:14:24 claude-code    Bash             rm -rf ./build  1ms
+           └ hook-factory/no-rm-rf: refusing `rm -rf ./build` — recursive force delete
+■ 09:14:26 claude-code    Write            src/config.ts  1ms
+           └ hook-factory/secret-guard: this looks like a AWS access key id
+■ 09:14:31 cursor         Read             /proj/.env  0ms
+           └ hook-factory/secret-guard: reading /proj/.env would pull credentials…
+· 09:14:35 gemini-cli     Bash             ls -la  2ms
+
+──────────────────────────────────────────────────────────────────────────
+  f everything  ·  d detail  ·  p pause  ·  c clear view  ·  x wipe journal  ·  q quit
+```
+
+Press `d` for the part that answers *why didn't my rule fire?* — every hook that ran, whether it decided anything, and how many were filtered out by their matchers:
+
+```console
+· 09:14:22 claude-code    Bash             npm test  4ms
+           · pass audit-log/record
+■ 09:14:24 claude-code    Bash             rm -rf ./build  1ms
+           └ hook-factory/no-rm-rf: refusing `rm -rf ./build` — recursive force delete
+           · hit no-rm-rf/block-dangerous
+· 09:14:35 gemini-cli     Bash             ls -la  2ms
+           · no hook matched (3 filtered out by matchers)
+```
+
+Slow hooks are called out in yellow, because a `PreToolUse` hook is latency your agent pays on every single tool call.
+
+It's plain ANSI with no dependencies, so it ships in the tarball and runs anywhere `npx` does.
+
+### Piping it
+
+```bash
+hook-factory watch --plain            # tab-separated, follows
+hook-factory watch --json             # JSONL, for jq or a log shipper
+hook-factory watch --plain --once     # dump history and exit
+hook-factory watch --clear            # wipe the journal
+```
+
+It writes to `.hookfactory/events.jsonl` (gitignored by `init`), capped at 5 MB with rotation. **Credentials are redacted before anything is written** — an observability tool that logs the secrets it exists to catch would be worse than none. Journalling never throws: a full disk or read-only checkout costs you the log, not the tool call. Disable it per-call with `--no-journal`.
+
+---
+
 ## How it works
 
 ```
@@ -302,6 +360,7 @@ add / remove          Toggle a built-in plugin in your config
 list                  Hooks, plugins, agents, capability matrix
 doctor                What's installed, wired up, and actually blocking
 test <event>          Fire a synthetic event through your hooks, changing nothing
+watch                 Live monitor: every hook firing, and what it decided
 ```
 
 `test` is the fastest way to know a rule works before trusting it:
