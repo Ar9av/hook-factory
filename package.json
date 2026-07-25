@@ -1,0 +1,67 @@
+{
+  "name": "hook-factory",
+  "version": "0.1.0",
+  "description": "One hook config, every coding agent. Write a hook once and hook-factory compiles it into Claude Code, Codex, Cursor, Gemini CLI, Copilot and 20+ other agents' native hook formats.",
+  "keywords": [
+    "hooks",
+    "claude-code",
+    "codex",
+    "cursor",
+    "gemini-cli",
+    "copilot",
+    "agent",
+    "ai",
+    "guardrails",
+    "pretooluse"
+  ],
+  "license": "MIT",
+  "author": "ar9av",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ar9av/hook-factory.git"
+  },
+  "homepage": "https://github.com/ar9av/hook-factory#readme",
+  "bugs": "https://github.com/ar9av/hook-factory/issues",
+  "type": "module",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "bin": {
+    "hook-factory": "dist/cli.js",
+    "hf": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./adapters": {
+      "types": "./dist/adapters/index.d.ts",
+      "default": "./dist/adapters/index.js"
+    },
+    "./plugins": {
+      "types": "./dist/plugins/index.d.ts",
+      "default": "./dist/plugins/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/chmod-bin.mjs",
+    "watch": "tsc -p tsconfig.json --watch",
+    "test": "npm run build && node --test test/*.test.js",
+    "tui": "cd tui && go build -o ../bin/hook-factory-tui .",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

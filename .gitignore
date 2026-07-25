@@ -1,0 +1,7 @@
+node_modules/
+dist/
+bin/
+*.tsbuildinfo
+.hookfactory/
+.DS_Store
+*.log
