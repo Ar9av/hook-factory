@@ -4,7 +4,7 @@
 
 **One hook config. Every coding agent.**
 
-Write a guardrail once — hook-factory compiles it into Claude Code, Codex, Cursor, Gemini CLI, Copilot, and 21 other agents' native hook formats.
+Write a guardrail once - hook-factory compiles it into Claude Code, Codex, Cursor, Gemini CLI, Copilot, and 21 other agents' native hook formats.
 
 [![npm](https://img.shields.io/npm/v/hook-factory?color=7C3AED)](https://www.npmjs.com/package/hook-factory)
 [![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
