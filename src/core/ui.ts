@@ -1,4 +1,4 @@
-/** Terminal styling for the plain CLI. The Go TUI does its own thing. */
+/** Terminal styling for the CLI. */
 
 const enabled = process.stdout.isTTY && !process.env.NO_COLOR && process.env.TERM !== 'dumb'
 

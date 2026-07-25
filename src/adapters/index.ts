@@ -122,7 +122,7 @@ export interface Capability {
   native?: string
 }
 
-/** What a given agent can actually do, for `hf doctor` and the TUI matrix. */
+/** What a given agent can actually do, for `hf doctor` and the `hf agent list` matrix. */
 export function capabilities(adapter: Adapter, events: readonly CanonicalEvent[]): Capability[] {
   return events.map((event) => ({
     event,

@@ -3,7 +3,7 @@ import { CANONICAL_EVENTS } from './types.js'
 
 export { CANONICAL_EVENTS }
 
-/** Short, human-facing descriptions used by `hf list` and the TUI. */
+/** Short, human-facing descriptions used by `hf list` and `hf agent info`. */
 export const EVENT_DOCS: Record<CanonicalEvent, string> = {
   sessionStart: 'A session begins or resumes',
   sessionEnd: 'A session terminates',

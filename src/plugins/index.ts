@@ -374,7 +374,7 @@ export const BUILTIN_PLUGINS = {
 
 export type BuiltinPluginName = keyof typeof BUILTIN_PLUGINS
 
-/** Metadata for `hf list --plugins` and the TUI browser. */
+/** Metadata for `hf list --plugins` and `hf add`. */
 export const PLUGIN_CATALOG: { name: BuiltinPluginName; description: string; needsOptions: boolean; example: string }[] = [
   { name: 'secret-guard', description: 'Block writes containing credentials and reads of .env / key files', needsOptions: false, example: 'secretGuard()' },
   { name: 'no-rm-rf', description: 'Refuse rm -rf, force push, hard reset, curl | sh, terraform destroy', needsOptions: false, example: 'dangerousCommands()' },

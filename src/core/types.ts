@@ -132,7 +132,7 @@ export type Matcher = (ev: HookEvent) => boolean
 
 /** One registered hook. This is what `onPreToolUse(...)` and friends produce. */
 export interface Hook {
-  /** Stable id, used in logs, `hf list`, and the TUI. */
+  /** Stable id, used in logs and `hf list`. */
   id: string
   /** Human-facing one-liner. */
   description?: string
@@ -234,7 +234,7 @@ export interface Adapter {
   install: InstallMode
   /** Link to the tool's hook docs. */
   docs?: string
-  /** Caveats worth surfacing in `hf doctor` and the TUI. */
+  /** Caveats worth surfacing in `hf doctor` and `hf agent info`. */
   notes?: string[]
   /** canonical -> the agent's native event name. Absent key = unsupported event. */
   events: Partial<Record<CanonicalEvent, string>>
